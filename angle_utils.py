@@ -86,3 +86,28 @@ def ema_smooth(prev, current, alpha=0.6):
     if prev is None:
         return np.array(current, dtype=float)
     return alpha * np.array(current, dtype=float) + (1 - alpha) * np.array(prev, dtype=float)
+
+def pose_similarity_strict(live_angles, ref_angles,
+                           tolerance_deg=15,
+                           hard_fail_deg=60):
+    """
+    tolerance_deg : angle error tolerated without penalty
+    hard_fail_deg : angle error beyond which score = 0
+    """
+
+    diff = np.abs(live_angles - ref_angles)
+
+    # HARD FAIL: any finger too wrong → 0%
+    if np.any(diff > hard_fail_deg):
+        return 0.0, np.zeros(5)
+
+    # Soft region: within tolerance
+    adj_diff = np.maximum(0, diff - tolerance_deg)
+
+    per_finger = np.clip(
+        100.0 * (1.0 - adj_diff / (hard_fail_deg - tolerance_deg)),
+        0, 100
+    )
+
+    return float(np.mean(per_finger)), per_finger
+
