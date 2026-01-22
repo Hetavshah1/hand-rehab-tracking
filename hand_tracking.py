@@ -1,4 +1,4 @@
-import cv2
+'''import cv2
 import mediapipe as mp
 import numpy as np
 import csv
@@ -118,3 +118,4 @@ with mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7) a
 cap.release()
 cv2.destroyAllWindows()
 csv_file.close()
+'''
