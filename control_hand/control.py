@@ -1,10 +1,10 @@
 import RPi.GPIO as GPIO
 import time
 
-# Use BCM GPIO numbering
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
-
-SERVO_PIN = 18
+# Use BCM GPIO numbering
+SERVO_PIN = 16
 GPIO.setup(SERVO_PIN, GPIO.OUT)
 
 # Set PWM frequency to 50Hz (standard for servo)
@@ -20,13 +20,11 @@ def set_angle(angle):
     pwm.ChangeDutyCycle(0)
 
 try:
+    j=0
     while True:
-        for i in range(0, 180, 10):
-            set_angle(i)     # 0 degrees
-            time.sleep(1)
-        for i in range(180, 0, -10):
-            set_angle(i)     # 0 degrees
-            time.sleep(1)
+        for i in range(0+j, 361+j, 10+j):
+            set_angle(i)     # 0 degree
+            j=j+361
 
 except KeyboardInterrupt:
     pwm.stop()
