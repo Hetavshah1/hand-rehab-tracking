@@ -7,7 +7,12 @@ import pickle
 import matplotlib.pyplot as plt
 import time
 
-from angle_utils import calculate_angle, ema_smooth
+from angle_utils import (
+    calculate_angle,
+    ema_smooth,
+    resample_sequence,
+    dtw_distance
+)
 
 # ----------------------------
 # Load reference data (LOCAL)
@@ -113,6 +118,10 @@ score_alpha = 0.7
 evaluation_on = False
 ref_idx = 0
 
+# 🔹 Buffers for DTW
+live_sequence = []
+reference_sequence = []
+
 print("Controls:")
 print("  s → start similarity score evaluation")
 print("  q → quit")
@@ -150,6 +159,12 @@ with mp_hands.Hands(
             )
 
             if evaluation_on:
+                # Store sequences for DTW
+                live_sequence.append(live_angles.copy())
+                reference_sequence.append(
+                    ref_angles[ref_idx % len(ref_angles)].copy()
+                )
+
                 raw_score = live_pose_accuracy_soft(
                     live_angles,
                     open_pose,
@@ -203,7 +218,9 @@ with mp_hands.Hands(
             prev_score = None
             ref_idx = 0
 
-            # Reset graph
+            live_sequence.clear()
+            reference_sequence.clear()
+
             start_time = None
             time_values.clear()
             similarity_values.clear()
@@ -214,6 +231,27 @@ with mp_hands.Hands(
             print("Similarity evaluation started")
 
         elif key == ord('q'):
+            # -------- FINAL DTW SCORE --------
+            if evaluation_on and len(live_sequence) > 5:
+                live_seq = np.array(live_sequence)
+                ref_seq = np.array(reference_sequence)
+
+                target_len = min(len(live_seq), len(ref_seq))
+                live_rs = resample_sequence(live_seq, target_len)
+                ref_rs = resample_sequence(ref_seq, target_len)
+
+                dist = dtw_distance(live_rs, ref_rs)
+
+                D = live_rs.shape[1]  # 5 fingers
+                max_possible = target_len * D * 180.0
+                overall_similarity = max(
+                    0.0, 100.0 * (1.0 - dist / max_possible)
+                )
+
+                print("\n==============================")
+                print(f"Overall Exercise Similarity (DTW): {overall_similarity:.2f}%")
+                print("==============================\n")
+
             break
 
 cap.release()
