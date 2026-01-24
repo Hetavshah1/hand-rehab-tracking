@@ -5,8 +5,10 @@ import os
 
 app = Flask(__name__)
 # Read configuration from environment with safe development defaults
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///exoskeleton.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql://postgres:Ved%402025@localhost:5432/exoskeleton_db"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # Do NOT hardcode secrets in source. Use an environment variable in production.
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret')
 

@@ -5,7 +5,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { theme } from './theme';
 import Login from './pages/Login.new';
-import Signup from './pages/Signup.new';
+import Signup from './pages/Signup';
 import DoctorDashboard from './pages/DoctorDashboard.new';
 import PatientDashboard from './pages/PatientDashboard.new';
 import Profile from './pages/Profile';

@@ -86,6 +86,7 @@ function Mode1() {
         } catch (e) {
           // ignore snapshot errors
         }
+
       }
       raf = requestAnimationFrame(loop);
     }
@@ -142,11 +143,11 @@ function Mode1() {
       stream.getTracks().forEach(t => t.stop());
     }
     const overall = Math.max(40, Math.min(99, Math.round(similarity || (60 + Math.random() * 30))));
-    const joints = ['Shoulder', 'Elbow', 'Wrist', 'Hip', 'Knee'].map(j => {
-      const variance = Math.round((Math.random() - 0.4) * 12);
-      const score = Math.max(30, Math.min(100, overall + variance));
-      return { joint: j, score };
-    });
+    
+    const joints = ['Shoulder', 'Elbow', 'Wrist', 'Hip', 'Knee'].map(j => ({
+      name: j,
+      score: Math.max(20, Math.min(100, overall + Math.round((Math.random() - 0.5) * 20)))
+    }));
     const timeline = Array.from({ length: 6 }).map((_, i) => ({
       t: i, score: Math.max(20, Math.min(100, overall + Math.round((Math.random() - 0.5) * 20)))
     }));
@@ -305,22 +306,7 @@ function Mode1() {
               </Box>
             </Box>
 
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6">Per-joint breakdown</Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-                {result.joints.map(j => (
-                  <Box key={j.joint} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box sx={{ width: 120 }}><Typography variant="body2">{j.joint}</Typography></Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ height: 10, background: 'rgba(0,0,0,0.06)', borderRadius: 6, overflow: 'hidden' }}>
-                        <Box sx={{ width: `${j.score}%`, height: '100%', background: j.score > 75 ? 'linear-gradient(90deg,#00d4ff,#00ff88)' : j.score > 50 ? 'linear-gradient(90deg,#ffd54d,#ff8a65)' : 'linear-gradient(90deg,#ff6b6b,#ff3b3b)' }} />
-                      </Box>
-                    </Box>
-                    <Box sx={{ width: 50 }}><Typography variant="body2">{j.score}%</Typography></Box>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
+            
 
             <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
               <Button variant="contained" onClick={() => { navigator.clipboard?.writeText(JSON.stringify(result)); alert('Result JSON copied to clipboard (simulated save)'); }}>Copy JSON</Button>
