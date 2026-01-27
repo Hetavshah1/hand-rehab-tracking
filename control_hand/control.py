@@ -20,11 +20,10 @@ def set_angle(angle):
     pwm.ChangeDutyCycle(0)
 
 try:
-    j=0
-    while True:
-        for i in range(0+j, 361+j, 10+j):
-            set_angle(i)     # 0 degree
-            j=j+361
+
+    for i in range(0, 1760, 10):
+        set_angle(i)     # 0 degree
+        
 
 except KeyboardInterrupt:
     pwm.stop()
