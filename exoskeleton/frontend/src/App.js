@@ -23,7 +23,7 @@ import Mode4 from './pages/Mode1.new'; // used as Mode 4 (video guided)
 import Mode3 from './pages/Mode2.new'; // used as Mode 3 (flex sensor)
 import Mode2 from './pages/Mode3.new'; // used as Mode 2 (optical)
 import Mode1 from './pages/Mode4.new'; // used as Mode 1 (exoskeleton)
-import ExerciseLibrary from './pages/ExerciseLibrary.new';
+import ExerciseLibrary from './pages/ExerciseLibrary';
 import Page from './components/Page';
 import MyAppBar from './components/AppBar';
 import './App.css';
@@ -37,6 +37,8 @@ function App() {
           <div className="app-background">
             <MyAppBar />
             <Routes>
+              <Route path="*" element={<div style={{color: 'red'}}>ROUTER IS WORKING</div>} />
+
               <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<Page><Login /></Page>} />
               <Route path="/signup" element={<Page><Signup /></Page>} />

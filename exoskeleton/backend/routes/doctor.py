@@ -5,6 +5,8 @@ import time
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db, send_email, jwt
 from models import User, PatientProfile, DoctorProfile, Session, Progress, Goal, Exercise, AssignedExercise, Message
+from sqlalchemy import text
+print(">>> doctor.py LOADED <<<")
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -226,31 +228,27 @@ def get_uploaded_file(filename):
 @doctor_required
 def get_exercises():
     exercises = Exercise.query.all()
-    result = []
-    for ex in exercises:
-        result.append({
-            'id': ex.id,
-            'name': ex.name,
-            'description': ex.description,
-            'video_url': ex.video_url,
-            'image_url': ex.image_url
-        })
-    return jsonify(result)
+
+    return jsonify([
+        {
+            "id": ex.id,
+            "name": ex.name,
+            "description": ex.description
+        }
+        for ex in exercises
+    ]), 200
+
 
 @doctor_bp.route('/exercises', methods=['POST'])
 @jwt_required()
 @doctor_required
 def add_exercise():
-    data = request.get_json()
-    ex = Exercise(
-        name=data.get('name'),
-        description=data.get('description'),
-        video_url=data.get('video_url'),
-        image_url=data.get('image_url')
-    )
-    db.session.add(ex)
-    db.session.commit()
-    return jsonify({'msg': 'Exercise added', 'exercise_id': ex.id}), 201
+    print("===== ADD_EXERCISE HIT =====")
+    print("content-type:", request.content_type)
+    print("form:", request.form)
+    print("json:", request.get_json(silent=True))
+
+    return jsonify({"msg": "DEBUG HIT"}), 200
 
 
 @doctor_bp.route('/exercises/upload', methods=['POST'])
@@ -287,8 +285,7 @@ def edit_exercise(exercise_id):
     data = request.get_json()
     ex.name = data.get('name', ex.name)
     ex.description = data.get('description', ex.description)
-    ex.video_url = data.get('video_url', ex.video_url)
-    ex.image_url = data.get('image_url', ex.image_url)
+    
     db.session.commit()
     return jsonify({'msg': 'Exercise updated'})
 
@@ -351,6 +348,75 @@ def get_assigned_exercises(patient_id):
             'assigned_date': a.assigned_date.isoformat()
         })
     return jsonify(result)
+
+
+
+@doctor_bp.route('/exercises/<int:exercise_id>/reference', methods=['POST'])
+@jwt_required()
+@doctor_required
+def upload_reference_recording(exercise_id):
+    if 'video' not in request.files or 'angles' not in request.files:
+        return jsonify({'msg': 'Both video and pkl files are required'}), 400
+
+    video = request.files['video']
+    angles = request.files['angles']
+
+    if video.filename == '' or angles.filename == '':
+        return jsonify({'msg': 'Empty filename'}), 400
+
+    # Save files
+    timestamp = int(time.time())
+    video_filename = f"ref_{exercise_id}_{timestamp}.mp4"
+    pkl_filename = f"ref_{exercise_id}_{timestamp}.pkl"
+
+    video_path = os.path.join(UPLOAD_FOLDER, video_filename)
+    pkl_path = os.path.join(UPLOAD_FOLDER, pkl_filename)
+
+    video.save(video_path)
+    angles.save(pkl_path)
+
+    # Insert paired record into DB
+    result = db.session.execute(
+        text("""
+            INSERT INTO reference_recordings (exercise_id, video_path, pkl_path)
+            VALUES (:exercise_id, :video_path, :pkl_path)
+            RETURNING id
+        """),
+        {
+            "exercise_id": exercise_id,
+            "video_path": f"/uploads/{video_filename}",
+            "pkl_path": f"/uploads/{pkl_filename}"
+        }
+    )
+
+    reference_id = result.scalar()
+    db.session.commit()
+
+    return jsonify({
+        'msg': 'Reference recording uploaded',
+        'reference_id': reference_id
+    }), 201
+
+@doctor_bp.route('/reference/<int:reference_id>/files', methods=['GET'])
+@jwt_required()
+@doctor_required
+def get_reference_files(reference_id):
+    record = db.session.execute(
+        text("""
+            SELECT video_path, pkl_path
+            FROM reference_recordings
+            WHERE id = :id
+        """),
+        {"id": reference_id}
+    ).mappings().first()
+
+    if not record:
+        return jsonify({'msg': 'Reference not found'}), 404
+
+    return jsonify({
+        'mp4': record['video_path'],
+        'pkl': record['pkl_path']
+    })
 
 @doctor_bp.route('/patients/<int:patient_id>/messages', methods=['GET'])
 @jwt_required()
