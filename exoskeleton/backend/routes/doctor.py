@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 import time
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions import db, send_email, jwt
+from backend.extensions import db, send_email, jwt
 from models import User, PatientProfile, DoctorProfile, Session, Progress, Goal, Exercise, AssignedExercise, Message
 from sqlalchemy import text
 print(">>> doctor.py LOADED <<<")
@@ -243,12 +243,27 @@ def get_exercises():
 @jwt_required()
 @doctor_required
 def add_exercise():
-    print("===== ADD_EXERCISE HIT =====")
-    print("content-type:", request.content_type)
-    print("form:", request.form)
-    print("json:", request.get_json(silent=True))
+    name = request.form.get('name')
+    description = request.form.get('description')
 
-    return jsonify({"msg": "DEBUG HIT"}), 200
+    if not name:
+        return jsonify({'error': 'Exercise name is required'}), 400
+
+    ex = Exercise(
+        name=name,
+        description=description,
+       
+    )
+
+    db.session.add(ex)
+    db.session.commit()
+
+    return jsonify({
+        'id': ex.id,
+        'name': ex.name,
+        'description': ex.description
+    }), 201
+
 
 
 @doctor_bp.route('/exercises/upload', methods=['POST'])
@@ -270,12 +285,15 @@ def upload_exercise():
     file.save(filepath)
 
     # Create Exercise record pointing to uploaded file
-    video_url = f"/uploads/{filename}"
-    ex = Exercise(name=name, description=description, video_url=video_url, image_url=None)
+    ex = Exercise(
+    name=name,
+    description=description
+)
+
     db.session.add(ex)
     db.session.commit()
 
-    return jsonify({'msg': 'Exercise uploaded', 'exercise': {'id': ex.id, 'name': ex.name, 'video_url': ex.video_url}}), 201
+    return jsonify({'msg': 'Exercise uploaded', 'exercise': {'id': ex.id, 'name': ex.name, }}), 201
 
 @doctor_bp.route('/exercises/<int:exercise_id>', methods=['PUT'])
 @jwt_required()
@@ -341,8 +359,7 @@ def get_assigned_exercises(patient_id):
                 'id': ex.id,
                 'name': ex.name,
                 'description': ex.description,
-                'video_url': ex.video_url,
-                'image_url': ex.image_url
+                
             },
             'notes': a.notes,
             'assigned_date': a.assigned_date.isoformat()

@@ -62,7 +62,7 @@ function RecordExercise({ exerciseId }) {
   };
 
   const stopRecording = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       setStatus('Not authenticated');
       return;
@@ -128,7 +128,7 @@ export default function ExerciseLibrary() {
   /* ===== LOAD EXERCISES ===== */
   useEffect(() => {
     const loadExercises = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       if (!token) return;
 
       try {
@@ -152,8 +152,19 @@ export default function ExerciseLibrary() {
 
   /* ===== CREATE EXERCISE ===== */
   const createExercise = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token || !newName.trim()) return;
+    
+  console.log("🔥 createExercise ENTERED");
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+  console.log("❌ createExercise: NO TOKEN");
+  return;
+}
+
+if (!newName.trim()) {
+  console.log("❌ createExercise: EMPTY NAME");
+  return;
+}
 
     setCreating(true);
 
@@ -203,33 +214,37 @@ export default function ExerciseLibrary() {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Create Exercise</Typography>
+<Typography variant="h6">Create Exercise</Typography>
 
-              <TextField
-                fullWidth
-                label="Exercise Name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                sx={{ mt: 1 }}
-              />
+<TextField
+  fullWidth
+  label="Exercise Name"
+  value={newName}
+  onChange={(e) => setNewName(e.target.value)}
+  sx={{ mt: 1 }}
+/>
 
-              <TextField
-                fullWidth
-                label="Description"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                sx={{ mt: 1 }}
-              />
+<TextField
+  fullWidth
+  label="Description"
+  value={newDescription}
+  onChange={(e) => setNewDescription(e.target.value)}
+  sx={{ mt: 1 }}
+/>
 
-              <Button
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={createExercise}
-                disabled={creating}
-              >
-                Create Exercise
-              </Button>
+<Button
+  variant="contained"
+  sx={{ mt: 2 }}
+  onClick={() => {
+    console.log("🔥 BUTTON CLICKED");
+    createExercise();
+  }}
+>
+  Create Exercise
+</Button>
 
+
+                
               {exercises.length > 0 && (
                 <>
                   <Typography variant="h6" sx={{ mt: 3 }}>
@@ -262,4 +277,4 @@ export default function ExerciseLibrary() {
       </Grid>
     </Container>
   );
-}
+  }

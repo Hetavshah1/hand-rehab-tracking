@@ -4,8 +4,7 @@ import axios from 'axios';
 import { Container, Card, CardContent, Typography, TextField, Button, Box, Alert, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-import CircularProgress from '@mui/material/CircularProgress';
-import { styled } from '@mui/material/styles';
+
 
 const StyledForm = styled('form')(({ theme }) => ({
   display: 'flex',
@@ -45,7 +44,7 @@ function Login() {
     setLoading(true);
     try {
       const res = await axios.post('http://127.0.0.1:5000/login', { email, password });
-      localStorage.setItem('token', res.data.access_token);
+      localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.role);
       if (res.data.role === 'doctor') {
         navigate('/doctor');
@@ -225,10 +224,10 @@ function Login() {
               </Button>
             </Typography>
           </CardContent>
-        </div>
-      </Container>
-    </div>
+        </GlassCard>
+      </AnimatedContainer>
+    </Box>
   );
-}
+
 
 export default Login; 

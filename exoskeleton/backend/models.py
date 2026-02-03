@@ -1,40 +1,45 @@
-from extensions import db
+from backend.extensions import db
 from datetime import datetime
 
 class User(db.Model):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # 'doctor' or 'patient'
-    patient_profile = db.relationship('PatientProfile', backref='user', uselist=False)
+    #patient_profile = db.relationship('PatientProfile', backref='user', uselist=False)
     doctor_profile = db.relationship('DoctorProfile', backref='user', uselist=False)
 
 class PatientProfile(db.Model):
+    __tablename__ = "patient_profiles"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     age = db.Column(db.Integer)
     diagnosis = db.Column(db.String(200))
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profile.id'))
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'))
     sessions = db.relationship('Session', backref='patient', lazy=True)
 
 class DoctorProfile(db.Model):
+    __tablename__ = "doctor_profiles"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     specialization = db.Column(db.String(100))
     patients = db.relationship('PatientProfile', backref='doctor', lazy=True)
     sessions = db.relationship('Session', backref='doctor', lazy=True)
-
+"""
 class Session(db.Model):
+    __tablename__ = "session"
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profile.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
     notes_file = db.Column(db.String(255))  # Path to uploaded file
     progresses = db.relationship('Progress', backref='session', lazy=True)
 
 class Progress(db.Model):
+    __tablename__ = "progress"
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('session.id'), nullable=False)
     metric_name = db.Column(db.String(100), nullable=False)  # e.g., 'range_of_motion', 'repetitions'
@@ -42,9 +47,10 @@ class Progress(db.Model):
     goal = db.Column(db.Float) 
 
 class Goal(db.Model):
+    __tablename__ = "goal"
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profile.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     target_value = db.Column(db.Float)
     metric_name = db.Column(db.String(100))
@@ -54,18 +60,22 @@ class Goal(db.Model):
 
 PatientProfile.goals = db.relationship('Goal', backref='patient', lazy=True)
 DoctorProfile.goals = db.relationship('Goal', backref='doctor', lazy=True) 
+"""
 
 class Exercise(db.Model):
+    __tablename__ = "exercises"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
 
-
+"""
 class AssignedExercise(db.Model):
+    __tablename__ = "exercise_comparisons"
+
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profile.id'), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
     assigned_date = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
 
@@ -74,9 +84,10 @@ DoctorProfile.assigned_exercises = db.relationship('AssignedExercise', backref='
 Exercise.assigned = db.relationship('AssignedExercise', backref='exercise', lazy=True) 
 
 class Message(db.Model):
+    __tablename__ = "message"
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profile.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
@@ -89,7 +100,7 @@ DoctorProfile.messages = db.relationship('Message', backref='doctor', lazy=True)
 
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     action = db.Column(db.String(100))
     target_type = db.Column(db.String(100))
     target_id = db.Column(db.Integer)
@@ -157,10 +168,12 @@ class ExercisePerformance(db.Model):
     overall_score = db.Column(db.Float)  # 0-100 overall performance score
     
     analysis_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
+"""
+"""
 # Relationships
 PatientProfile.video_captures = db.relationship('VideoCapture', backref='patient', lazy=True)
 Session.video_captures = db.relationship('VideoCapture', backref='session', lazy=True)
 VideoCapture.movement_analyses = db.relationship('MovementAnalysis', backref='video_capture', lazy=True)
 VideoCapture.exercise_performances = db.relationship('ExercisePerformance', backref='video_capture', lazy=True)
 Exercise.exercise_performances = db.relationship('ExercisePerformance', backref='exercise', lazy=True) 
+"""
