@@ -32,7 +32,7 @@ class FlexSensorReader:
         self.ANGLE_MIN = 0.0
         self.ANGLE_MAX = 180.0
 
-    def _adc_to_angle(self, raw_adc):
+    def adc_to_angle(self, raw_adc):
         raw_adc = np.clip(raw_adc, self.ADC_MIN, self.ADC_MAX) # ensures no noise
         
         # “Take the raw ADC value from the flex sensor and convert it into a joint angle, assuming a linear relationship.”
@@ -43,19 +43,16 @@ class FlexSensorReader:
         )
 
     def read_angles(self):
-        """
-        Reads all flex sensors once
-        RETURNS:
-        dict with angles for each finger
-        """
+       '''read all the flex sensors here and maps the ADC value to the angle by using the adc_to_angle function'''
 
         finger_names = ["thumb", "index", "middle", "ring", "pinky"]
         angles = {}
 
         #zip function pairs elements from multiple iterables together, position-by-position
+        #ch reads the values of flex sensor(resistance values) and raw converts it to the ADC language 
         for name, ch in zip(finger_names, self.channels):
             raw = ch.value >> 6   # scale 16-bit to ~10-bit
-            angles[name] = self._adc_to_angle(raw)
+            angles[name] = self.adc_to_angle(raw) # mapping between the ADC values and the angles 
 
         return angles
 

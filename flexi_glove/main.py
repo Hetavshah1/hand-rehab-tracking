@@ -8,18 +8,15 @@ def main():
 
     print("\nStarting 5-second acquisition...\n")
 
-    data = sensor_reader.read_at_fixed_times(total_seconds=5)
+    data = sensor_reader.read_at_fixed_times(total_seconds=7)
 
     for time_sec, measured_angles in data:
-        finger_errors, avg_error = error_calc.compute_error(
-            measured_angles,
-            time_sec
-        )
+        finger_errors, similarity = error_calc.compute_error(measured_angles,time_sec)
 
         print(f"Time = {time_sec}s")
         print("Measured angles:", measured_angles)
         print("Finger errors:", finger_errors)
-        print(f"Average error: {avg_error:.2f}°")
+        print(f"Similarity: {similarity:.2f}°")
         print("-" * 50)
 
 
