@@ -3,10 +3,15 @@ from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 import time
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.extensions import db, send_email, jwt
-from models import User, PatientProfile, DoctorProfile, Session, Progress, Goal, Exercise, AssignedExercise, Message
+from extensions import db, send_email, jwt
+from models import User , DoctorProfile, Exercise
 from sqlalchemy import text
+from cv.record_reference import HandRecorder
+import threading
+
 print(">>> doctor.py LOADED <<<")
+recorder = None
+recording_thread = None
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -294,6 +299,40 @@ def upload_exercise():
     db.session.commit()
 
     return jsonify({'msg': 'Exercise uploaded', 'exercise': {'id': ex.id, 'name': ex.name, }}), 201
+
+@doctor_bp.route('/exercises/<int:exercise_id>/reference/start', methods=['POST'])
+@jwt_required()
+@doctor_required
+def start_reference_recording(exercise_id):
+    global recorder, recording_thread
+
+    upload_dir = doctor_bp.upload_folder
+    recorder = HandRecorder(upload_dir)
+
+    filename = f"ref_{exercise_id}_{int(time.time())}"
+    recorder.start(filename)
+
+    def loop():
+        while recorder.recording:
+            recorder.capture_frame()
+
+    recording_thread = threading.Thread(target=loop)
+    recording_thread.start()
+
+    return jsonify({"msg": "Recording started"}), 200
+
+@doctor_bp.route('/exercises/<int:exercise_id>/reference/stop', methods=['POST'])
+@jwt_required()
+@doctor_required
+def stop_reference_recording(exercise_id):
+    global recorder
+
+    video_path, pkl_path = recorder.stop()
+
+    return jsonify({
+        "mp4": f"/uploads/{os.path.basename(video_path)}",
+        "pkl": f"/uploads/{os.path.basename(pkl_path)}"
+    }), 200
 
 @doctor_bp.route('/exercises/<int:exercise_id>', methods=['PUT'])
 @jwt_required()

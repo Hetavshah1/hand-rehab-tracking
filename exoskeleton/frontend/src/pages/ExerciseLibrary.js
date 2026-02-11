@@ -15,102 +15,89 @@ import {
 /* =========================
    RECORD REFERENCE EXERCISE
    ========================= */
-function RecordExercise({ exerciseId }) {
-  const videoRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const recordedChunksRef = useRef([]);
-
-  const [stream, setStream] = useState(null);
+function RecordReferenceControls({ exerciseId }) {
   const [recording, setRecording] = useState(false);
   const [status, setStatus] = useState('');
 
+  const startReferenceRecording = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `http://127.0.0.1:5000/exercises/${exerciseId}/reference/start`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRecording(true);
+      setStatus('Recording started');
+    } catch (err) {
+      console.error(err);
+      setStatus('Failed to start recording');
+    }
+  };
+
+  const stopReferenceRecording = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `http://127.0.0.1:5000/exercises/${exerciseId}/reference/stop`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRecording(false);
+      setStatus('Recording saved');
+      console.log('MP4:', res.data.mp4);
+      console.log('PKL:', res.data.pkl);
+    } catch (err) {
+      console.error(err);
+      setStatus('Failed to stop recording');
+    }
+  };
+
+  return (
+    <Box>
+      {!recording ? (
+        <Button variant="contained" onClick={startReferenceRecording}>
+          Start Recording
+        </Button>
+      ) : (
+        <Button variant="contained" color="error" onClick={stopReferenceRecording}>
+          Stop Recording
+        </Button>
+      )}
+      <Typography variant="body2" sx={{ mt: 1 }}>
+        {status}
+      </Typography>
+    </Box>
+  );
+}
+
+function WebcamPreview() {
+  const videoRef = useRef(null);
+
   useEffect(() => {
     const initCamera = async () => {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      } catch (err) {
-        console.error(err);
-        setStatus('Camera access denied');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
     };
 
     initCamera();
   }, []);
 
-  const startRecording = () => {
-    if (!stream) return;
-
-    recordedChunksRef.current = [];
-    mediaRecorderRef.current = new MediaRecorder(stream, {
-      mimeType: 'video/webm'
-    });
-
-    mediaRecorderRef.current.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunksRef.current.push(e.data);
-    };
-
-    mediaRecorderRef.current.start();
-    setRecording(true);
-    setStatus('Recording...');
-  };
-
-  const stopRecording = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setStatus('Not authenticated');
-      return;
-    }
-
-    mediaRecorderRef.current.stop();
-    setRecording(false);
-    setStatus('Uploading...');
-
-    const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append('video', blob);
-
-    try {
-      await axios.post(
-        `http://127.0.0.1:5000/exercises/${exerciseId}/reference`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      setStatus('Reference saved successfully');
-    } catch (err) {
-      console.error(err);
-      setStatus('Upload failed');
-    }
-  };
-
   return (
-    <Box>
-      <video ref={videoRef} autoPlay muted style={{ width: '100%' }} />
-      <Box mt={1}>
-        {!recording ? (
-          <Button onClick={startRecording} disabled={!stream}>
-            Start Recording
-          </Button>
-        ) : (
-          <Button onClick={stopRecording}>
-            Stop Recording
-          </Button>
-        )}
-      </Box>
-      <Typography variant="body2">{status}</Typography>
-    </Box>
+    <video
+      ref={videoRef}
+      autoPlay
+      muted
+      style={{ width: '100%', borderRadius: 8 }}
+    />
   );
 }
+
 
 /* =========================
    EXERCISE LIBRARY PAGE
@@ -124,6 +111,13 @@ export default function ExerciseLibrary() {
   const [creating, setCreating] = useState(false);
 
   const navigate = useNavigate();
+  const modes = [
+  { label: 'Mode 1', path: 'mode1' },
+  { label: 'Mode 2', path: 'mode2' },
+  { label: 'Mode 3', path: 'mode3' },
+  { label: 'Mode 4', path: 'mode4' }
+];
+
 
   /* ===== LOAD EXERCISES ===== */
   useEffect(() => {
@@ -250,7 +244,12 @@ if (!newName.trim()) {
                   <Typography variant="h6" sx={{ mt: 3 }}>
                     Record Reference Exercise
                   </Typography>
-                  <RecordExercise exerciseId={exercises[0].id} />
+                  <WebcamPreview />
+
+<Box mt={2}>
+  <RecordReferenceControls exerciseId={exercises[0].id} />
+</Box>
+
                 </>
               )}
             </CardContent>
@@ -263,13 +262,21 @@ if (!newName.trim()) {
             <Card key={ex.id} sx={{ mb: 2 }}>
               <CardContent>
                 <Typography>{ex.name}</Typography>
-                <Button
-                  onClick={() =>
-                    navigate(`/exercise/${ex.id}/mode1`)
-                  }
-                >
-                  Mode 1
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+  {modes.map((mode) => (
+    <Button
+      key={mode.path}
+      size="small"
+      variant="outlined"
+      onClick={() =>
+        navigate(`/exercise/${ex.id}/${mode.path}`)
+      }
+    >
+      {mode.label}
+    </Button>
+  ))}
+</Box>
+
               </CardContent>
             </Card>
           ))}

@@ -1,4 +1,4 @@
-from backend.extensions import db
+from extensions import db
 from datetime import datetime
 
 class User(db.Model):
@@ -11,22 +11,22 @@ class User(db.Model):
     #patient_profile = db.relationship('PatientProfile', backref='user', uselist=False)
     doctor_profile = db.relationship('DoctorProfile', backref='user', uselist=False)
 
-class PatientProfile(db.Model):
+'''class PatientProfile(db.Model):
     __tablename__ = "patient_profiles"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     age = db.Column(db.Integer)
     diagnosis = db.Column(db.String(200))
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'))
-    sessions = db.relationship('Session', backref='patient', lazy=True)
+    sessions = db.relationship('Session', backref='patient', lazy=True) '''
 
 class DoctorProfile(db.Model):
     __tablename__ = "doctor_profiles"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     specialization = db.Column(db.String(100))
-    patients = db.relationship('PatientProfile', backref='doctor', lazy=True)
-    sessions = db.relationship('Session', backref='doctor', lazy=True)
+    #patients = db.relationship('PatientProfile', backref='doctor', lazy=True)
+   # sessions = db.relationship('Session', backref='doctor', lazy=True)
 """
 class Session(db.Model):
     __tablename__ = "session"

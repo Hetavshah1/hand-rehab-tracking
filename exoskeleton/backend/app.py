@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.extensions import db, jwt
+from extensions import db, jwt
 import os
 
 app = Flask(__name__)
@@ -19,11 +19,9 @@ CORS(app, origins=[frontend_origin], supports_credentials=True)
 db.init_app(app)
 jwt.init_app(app)
 
-from routes import auth, doctor, patient
-
+from routes import auth, doctor 
 app.register_blueprint(auth.auth_bp)
 app.register_blueprint(doctor.doctor_bp)
-app.register_blueprint(patient.patient_bp)
-
+'''app.register_blueprint(patient.patient_bp)'''
 if __name__ == '__main__':
     app.run(debug=True) 
